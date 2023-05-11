@@ -25,6 +25,16 @@ export async function createCustomer(req, res) {
 }
 
 export async function getCustomer(req, res) {
+  try {
+    const result = await db.query("SELECT * FROM customers");
+
+    return res.status(200).send(result.rows);
+  } catch (err) {
+    return res.status(500).send({ message: err.message });
+  }
+}
+
+export async function getCustomerById(req, res) {
   const { id } = req.params;
 
   try {
