@@ -7,6 +7,10 @@ export async function createGame(req, res) {
     return res
       .status(400)
       .send({ message: "stockTotal and pricePerDay must be greater than 0" });
+  } else if (stockTotal < 0) {
+    return res
+      .status(400)
+      .send({ message: "stockTotal must be greater than or equal to 0" });
   }
 
   try {
@@ -31,7 +35,7 @@ export async function createGame(req, res) {
 export async function getGames(req, res) {
   try {
     const result = await db.query(`SELECT * FROM games`);
-    
+
     return res.status(200).send(result.rows);
   } catch (err) {
     return res.status(500).send({ message: err });
