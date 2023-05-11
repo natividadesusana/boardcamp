@@ -3,10 +3,6 @@ import { db } from "../database/database.connection.js";
 export async function createGame(req, res) {
   const { name, image, stockTotal, pricePerDay } = req.body;
 
-  if (!name) {
-    return res.status(400).send({ message: "Field 'name' is required" });
-  }
-
   if (stockTotal <= 0 || pricePerDay <= 0) {
     return res
       .status(400)
@@ -35,14 +31,8 @@ export async function createGame(req, res) {
 export async function getGames(req, res) {
   try {
     const result = await db.query(`SELECT * FROM games`);
-    const games = result.rows.map((game) => ({
-      id: game.id,
-      name: game.name,
-      image: game.image,
-      stockTotal: game.stockTotal,
-      pricePerDay: game.pricePerDay,
-    }));
-    return res.status(200).send(games);
+    
+    return res.status(200).send(result.rows);
   } catch (err) {
     return res.status(500).send({ message: err });
   }
