@@ -70,14 +70,33 @@ export async function createRental(req, res) {
 export async function getRentals(req, res) {
   try {
     const result = await db.query(`
-    SELECT rentals.*, games.*, customers.*, TO_CHAR(rentals.rentDate::DATE, 'yyyy-mm-dd') AS rentDate
+    SELECT rentals.*, games.name AS game_name, customers.id AS customer_id, customers.name AS customer_name, customers.phone, TO_CHAR(rentals.rentDate::DATE, 'yyyy-mm-dd') AS rentDate
     FROM rentals
     JOIN games ON rentals.gameId = games.id
     JOIN customers ON rentals.customerId = customers.id
-    WHERE rentals.id = $1
     `);
 
-    return res.status(200).send(result.rows);
+    const rentals = result.rows.map(row => ({
+      id: row.id,
+      customerId: row.customer_id,
+      gameId: row.gameId,
+      rentDate: row.rentDate,
+      daysRented: row.daysRented,
+      returnDate: row.returnDate,
+      originalPrice: row.originalPrice,
+      delayFee: row.delayFee,
+      customer: {
+        id: row.customer_id,
+        name: row.customer_name,
+        phone: row.phone,
+      },
+      game: {
+        id: row.gameId,
+        name: row.game_name,
+      },
+    }));
+
+    return res.status(200).send(rentals);
   } catch (err) {
     return res.status(500).send({ message: err });
   }
