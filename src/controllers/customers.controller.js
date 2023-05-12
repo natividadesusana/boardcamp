@@ -26,7 +26,7 @@ export async function createCustomer(req, res) {
 
 export async function getCustomer(req, res) {
   try {
-    const result = await db.query("SELECT * FROM customers");
+    const result = await db.query("SELECT id, name, phone, cpf, TO_CHAR(birthday::DATE, 'yyyy-mm-dd') AS birthday FROM customers");
 
     return res.status(200).send(result.rows);
   } catch (err) {
@@ -38,7 +38,7 @@ export async function getCustomerById(req, res) {
   const { id } = req.params;
 
   try {
-    const result = await db.query("SELECT * FROM customers WHERE id = $1", [
+    const result = await db.query("SELECT id, name, phone, cpf, TO_CHAR(birthday::DATE, 'yyyy-mm-dd') AS birthday FROM customers WHERE id = $1", [
       id,
     ]);
 

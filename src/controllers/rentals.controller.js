@@ -69,7 +69,12 @@ export async function createRental(req, res) {
 
 export async function getRentals(req, res) {
   try {
-    const result = await db.query(`SELECT * FROM rentals`);
+    const result = await db.query(`SELECT rentals.*, games.*, customers.*, TO_CHAR(rentals.rentDate::DATE, 'yyyy-mm-dd') AS rentDate
+    FROM rentals
+    JOIN games ON rentals.gameId = games.id
+    JOIN customers ON rentals.customerId = customers.id
+    WHERE rentals.id = $1
+    `);
 
     return res.status(200).send(result.rows);
   } catch (err) {
