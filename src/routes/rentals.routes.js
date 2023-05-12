@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createRental } from '../controllers/rentalsController.js';
+import { createRental } from '../controllers/rentals.controller.js';
 import validateSchema from '../middlewares/validateSchema.middleware.js'
 import rentalSchema from '../schemas/rentals.schemas.js'
 

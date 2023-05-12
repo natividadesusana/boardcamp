@@ -12,7 +12,7 @@ export async function createRental(req, res) {
     }
 
     if (daysRented <= 0) {
-      return res.status(400).send({ message: "daysRented deve ser maior que 0" });
+      return res.status(400).send({ message: "daysRented must be greater than 0" });
     }
 
     const rentalDate = new Date();
