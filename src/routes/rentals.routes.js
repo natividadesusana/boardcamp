@@ -1,12 +1,13 @@
 import { Router } from "express";
-import { createRental, getRentals, updateRental } from "../controllers/rentals.controller.js";
+import { createRentals, getRentals, updateRentals, deleteRentals } from "../controllers/rentals.controller.js";
 import validateSchema from "../middlewares/validateSchema.middleware.js";
 import rentalSchema from "../schemas/rentals.schemas.js";
 
 const rentalsRouter = Router();
 
 rentalsRouter.get("/rentals", getRentals);
-rentalsRouter.post("/rentals", validateSchema(rentalSchema), createRental);
-rentalsRouter.post("/rentals/:id/return", updateRental);
+rentalsRouter.post("/rentals", validateSchema(rentalSchema), createRentals);
+rentalsRouter.post("/rentals/:id/return", updateRentals);
+rentalsRouter.delete('/rentals/:id', deleteRentals);
 
 export default rentalsRouter;

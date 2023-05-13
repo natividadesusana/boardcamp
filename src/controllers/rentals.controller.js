@@ -1,6 +1,40 @@
 import { db } from "../database/database.connection.js";
 
-export async function createRental(req, res) {
+export async function getRentals(req, res) {
+  try {
+    const result = await db.query(`
+      SELECT rentals.*, customers.name as customerName, games.name as gameName
+      FROM rentals
+      JOIN customers ON customers.id = rentals."customerId"
+      JOIN games ON games.id = rentals."gameId"
+    `);
+
+    const rentalList = result.rows.map((rental) => ({
+      id: rental.id,
+      customerId: rental.customerId,
+      gameId: rental.gameId,
+      rentDate: rental.rentDate,
+      daysRented: rental.daysRented,
+      returnDate: rental.returnDate,
+      originalPrice: rental.originalPrice,
+      delayFee: rental.delayFee,
+      customer: {
+        id: rental.customerId,
+        name: rental.customerName,
+      },
+      game: {
+        id: rental.gameId,
+        name: rental.gameName,
+      },
+    }));
+
+    return res.send(rentalList);
+  } catch (err) {
+    return res.status(500).send({ message: err });
+  }
+}
+
+export async function createRentals(req, res) {
   const { customerId, gameId, daysRented } = req.body;
 
   if (!Number.isInteger(daysRented) || daysRented <= 0) {
@@ -67,41 +101,7 @@ export async function createRental(req, res) {
   }
 }
 
-export async function getRentals(req, res) {
-  try {
-    const result = await db.query(`
-      SELECT rentals.*, customers.name as customerName, games.name as gameName
-      FROM rentals
-      JOIN customers ON customers.id = rentals."customerId"
-      JOIN games ON games.id = rentals."gameId"
-    `);
-
-    const rentals = result.rows.map((rental) => ({
-      id: rental.id,
-      customerId: rental.customerId,
-      gameId: rental.gameId,
-      rentDate: rental.rentDate,
-      daysRented: rental.daysRented,
-      returnDate: rental.returnDate,
-      originalPrice: rental.originalPrice,
-      delayFee: rental.delayFee,
-      customer: {
-        id: rental.customerId,
-        name: rental.customerName,
-      },
-      game: {
-        id: rental.gameId,
-        name: rental.gameName,
-      },
-    }));
-
-    return res.sendStatus(201);
-  } catch (err) {
-    return res.status(500).send({ message: err });
-  }
-}
-
-export async function updateRental(req, res) {
+export async function updateRentals(req, res) {
   const id = req.params.id;
 
   try {
@@ -118,13 +118,13 @@ export async function updateRental(req, res) {
     );
 
     if (result.rowCount === 0) {
-      return res.status(404).send("Aluguel não existente");
+      return res.status(404).send("Rent not found");
     }
 
     const rental = result.rows[0];
 
     if (rental.returnDate !== null) {
-      return res.status(400).send("Aluguel já finalizado");
+      return res.status(400).send("Lease already finalized");
     }
 
     const returnDate = dayjs();
@@ -148,5 +148,34 @@ export async function updateRental(req, res) {
     return res.sendStatus(201);
   } catch (err) {
     return res.status(500).send({ message: err });
+  }
+}
+
+export async function deleteRentals(req, res) {
+  const id = req.params.id;
+
+  try {
+    const result = await db.query(
+      `
+        SELECT * FROM rentals WHERE id=$1
+        `,
+      [id]
+    );
+    if (result.rowCount < 1) {
+      return res.status(404).send('Rental not found.');
+    }
+    if (result.rows[0].returnDate !== null) {
+      return res.status(400).send('The rental has already been returned.');
+    }
+
+    await db.query(
+      `
+        DELETE FROM rentals WHERE id=$1
+        `,
+      [id]
+    );
+    res.sendStatus(200);
+  } catch (err) {
+    res.status(500).send(err);
   }
 }
