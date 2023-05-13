@@ -67,6 +67,7 @@ export async function createRental(req, res) {
   }
 }
 
+
 export async function getRentals(req, res) {
   try {
     const result = await db.query(`
@@ -97,6 +98,40 @@ export async function getRentals(req, res) {
     }));
 
     return res.status(200).send(rentals);
+  } catch (err) {
+    return res.status(500).send({ message: err });
+  }
+}
+
+export async function updateRental(req, res) {
+  const { id } = req.params;
+
+  try {
+    const rental = await db.query('SELECT * FROM rentals WHERE id = $1', [id]);
+
+    if (rental.rowCount === 0) {
+      return res.status(404).send({ message: 'Rent not found.' });
+    }
+
+    if (rental.rows[0].returnDate !== null) {
+      return res.status(400).send({ message: 'Lease already completed.' });
+    }
+
+    const today = new Date();
+    const rentDate = new Date(rental.rows[0].rentDate);
+    const daysRented = rental.rows[0].daysRented;
+    const pricePerDay = rental.rows[0].originalPrice / daysRented;
+
+    const delayDays = Math.ceil((today - rentDate) / (1000 * 60 * 60 * 24)) - daysRented;
+    const delayFee = delayDays > 0 ? Math.round(delayDays * pricePerDay * 100) : 0;
+
+    await db.query(
+      'UPDATE rentals SET returnDate = $1, delayFee = $2 WHERE id = $3',
+      [today, delayFee, id]
+    );
+
+    return res.sendStatus(200);
+
   } catch (err) {
     return res.status(500).send({ message: err });
   }
