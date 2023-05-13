@@ -41,9 +41,9 @@ export async function createRental(req, res) {
       gameId,
       rentDate,
       daysRented,
-      null, 
+      null,
       originalPrice,
-      null, 
+      null,
     ];
 
     await db.query(
@@ -67,71 +67,85 @@ export async function createRental(req, res) {
   }
 }
 
-
 export async function getRentals(req, res) {
   try {
     const result = await db.query(`
-    SELECT rentals.*, games.name AS game_name, customers.id AS customer_id, customers.name AS customer_name, customers.phone, TO_CHAR(rentals.rentDate::DATE, 'yyyy-mm-dd') AS rentDate
-    FROM rentals
-    JOIN games ON rentals.gameId = games.id
-    JOIN customers ON rentals.customerId = customers.id
+      SELECT rentals.*, customers.name as customerName, games.name as gameName
+      FROM rentals
+      JOIN customers ON customers.id = rentals."customerId"
+      JOIN games ON games.id = rentals."gameId"
     `);
 
-    const rentals = result.rows.map(row => ({
-      id: row.id,
-      customerId: row.customer_id,
-      gameId: row.gameId,
-      rentDate: row.rentDate,
-      daysRented: row.daysRented,
-      returnDate: row.returnDate,
-      originalPrice: row.originalPrice,
-      delayFee: row.delayFee,
+    const rentals = result.rows.map((rental) => ({
+      id: rental.id,
+      customerId: rental.customerId,
+      gameId: rental.gameId,
+      rentDate: rental.rentDate,
+      daysRented: rental.daysRented,
+      returnDate: rental.returnDate,
+      originalPrice: rental.originalPrice,
+      delayFee: rental.delayFee,
       customer: {
-        id: row.customer_id,
-        name: row.customer_name,
-        phone: row.phone,
+        id: rental.customerId,
+        name: rental.customerName,
       },
       game: {
-        id: row.gameId,
-        name: row.game_name,
+        id: rental.gameId,
+        name: rental.gameName,
       },
     }));
 
-    return res.status(200).send(rentals);
+    return res.sendStatus(201);
   } catch (err) {
     return res.status(500).send({ message: err });
   }
 }
 
 export async function updateRental(req, res) {
-  const { id } = req.params;
+  const id = req.params.id;
 
   try {
-    const rental = await db.query('SELECT * FROM rentals WHERE id = $1', [id]);
-
-    if (rental.rowCount === 0) {
-      return res.status(404).send({ message: 'Rent not found.' });
-    }
-
-    if (rental.rows[0].returnDate !== null) {
-      return res.status(400).send({ message: 'Lease already completed.' });
-    }
-
-    const today = new Date();
-    const rentDate = new Date(rental.rows[0].rentDate);
-    const daysRented = rental.rows[0].daysRented;
-    const pricePerDay = rental.rows[0].originalPrice / daysRented;
-
-    const delayDays = Math.ceil((today - rentDate) / (1000 * 60 * 60 * 24)) - daysRented;
-    const delayFee = delayDays > 0 ? Math.round(delayDays * pricePerDay * 100) : 0;
-
-    await db.query(
-      'UPDATE rentals SET returnDate = $1, delayFee = $2 WHERE id = $3',
-      [today, delayFee, id]
+    const result = await db.query(
+      `
+        SELECT
+          rentals.*,
+          games."pricePerDay" AS "pricePerDay"
+        FROM rentals 
+        JOIN games ON games.id=rentals."gameId"
+        WHERE rentals.id=$1
+      `,
+      [id]
     );
 
-    return res.sendStatus(200);
+    if (result.rowCount === 0) {
+      return res.status(404).send("Aluguel não existente");
+    }
 
+    const rental = result.rows[0];
+
+    if (rental.returnDate !== null) {
+      return res.status(400).send("Aluguel já finalizado");
+    }
+
+    const returnDate = dayjs();
+    const diff = returnDate.diff(dayjs(rental.rentDate), "day");
+    let delayFee = 0;
+
+    if (diff > rental.daysRented) {
+      delayFee = (diff - rental.daysRented) * rental.pricePerDay;
+    }
+
+    await db.query(
+      `
+        UPDATE rentals
+        SET "returnDate"=$1,
+            "delayFee"=$2
+        WHERE id=$3
+      `,
+      [returnDate.format("YYYY-MM-DD HH:mm:ss"), delayFee, id]
+    );
+
+    return res.sendStatus(201);
   } catch (err) {
     return res.status(500).send({ message: err });
   }
