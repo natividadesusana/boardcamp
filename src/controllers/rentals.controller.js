@@ -1,38 +1,5 @@
 import { db } from "../database/database.connection.js";
-
-export async function getRentals(req, res) {
-  try {
-    const result = await db.query(`
-      SELECT rentals.*, customers.name as customerName, games.name as gameName
-      FROM rentals
-      JOIN customers ON customers.id = rentals."customerId"
-      JOIN games ON games.id = rentals."gameId"
-    `);
-
-    const rentalList = result.rows.map((rental) => ({
-      id: rental.id,
-      customerId: rental.customerId,
-      gameId: rental.gameId,
-      rentDate: rental.rentDate,
-      daysRented: rental.daysRented,
-      returnDate: rental.returnDate,
-      originalPrice: rental.originalPrice,
-      delayFee: rental.delayFee,
-      customer: {
-        id: rental.customerId,
-        name: rental.customerName,
-      },
-      game: {
-        id: rental.gameId,
-        name: rental.gameName,
-      },
-    }));
-
-    return res.send(rentalList);
-  } catch (err) {
-    return res.status(500).send({ message: err });
-  }
-}
+import dayjs from "dayjs";
 
 export async function createRentals(req, res) {
   const { customerId, gameId, daysRented } = req.body;
@@ -100,6 +67,44 @@ export async function createRentals(req, res) {
     return res.status(500).send({ message: err });
   }
 }
+
+export async function getRentals(req, res) {
+  try {
+    const result = await db.query(`
+      SELECT rentals.*, 
+          TO_CHAR(rentals."rentDate", 'yyyy-mm-dd') AS "formattedRentDate",
+          customers.name AS "customerName",
+          games.name AS "gameName"
+      FROM rentals
+      JOIN customers ON customers.id = rentals."customerId"
+      JOIN games ON games.id = rentals."gameId"
+    `);
+
+    const rentalList = result.rows.map((rental) => ({
+      id: rental.id,
+      customerId: rental.customerId,
+      gameId: rental.gameId,
+      rentDate: rental.formattedRentDate,
+      daysRented: rental.daysRented,
+      returnDate: rental.returnDate,
+      originalPrice: rental.originalPrice,
+      delayFee: rental.delayFee,
+      customer: {
+        id: rental.customerId,
+        name: rental.customerName,
+      },
+      game: {
+        id: rental.gameId,
+        name: rental.gameName,
+      },
+    }));
+
+    return res.send(rentalList);
+  } catch (err) {
+    return res.status(500).send({ message: err });
+  }
+}
+
 
 export async function updateRentals(req, res) {
   const id = req.params.id;
@@ -179,3 +184,4 @@ export async function deleteRentals(req, res) {
     res.status(500).send(err);
   }
 }
+

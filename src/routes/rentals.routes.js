@@ -5,8 +5,8 @@ import rentalSchema from "../schemas/rentals.schemas.js";
 
 const rentalsRouter = Router();
 
-rentalsRouter.get("/rentals", getRentals);
 rentalsRouter.post("/rentals", validateSchema(rentalSchema), createRentals);
+rentalsRouter.get("/rentals", getRentals);
 rentalsRouter.post("/rentals/:id/return", updateRentals);
 rentalsRouter.delete('/rentals/:id', deleteRentals);
 
