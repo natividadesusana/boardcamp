@@ -134,7 +134,7 @@ export async function updateRentals(req, res) {
     const diff = Math.floor(
       (returnDate - new Date(rental.rentDate)) / (1000 * 60 * 60 * 24)
     );
-    let delayFee = 0;
+    let delayFee = null;
 
     if (diff > rental.daysRented) {
       delayFee = (diff - rental.daysRented) * rental.pricePerDay;
@@ -143,11 +143,11 @@ export async function updateRentals(req, res) {
     await db.query(
       `
         UPDATE rentals
-        SET "returnDate" = TO_CHAR($1 :: DATE, 'yyyy-mm-dd'),
+        SET "returnDate" = $1,
             "delayFee" = $2
         WHERE id = $3
       `,
-      [returnDate.toISOString(), delayFee, id]
+      [returnDate.toISOString().slice(0, 10), delayFee, id]
     );
 
     return res.sendStatus(200);
