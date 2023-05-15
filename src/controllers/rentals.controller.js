@@ -1,5 +1,4 @@
 import { db } from "../database/database.connection.js";
-import dayjs from "dayjs";
 
 export async function createRentals(req, res) {
   const { customerId, gameId, daysRented } = req.body;
@@ -105,7 +104,6 @@ export async function getRentals(req, res) {
   }
 }
 
-
 export async function updateRentals(req, res) {
   const id = req.params.id;
 
@@ -116,8 +114,8 @@ export async function updateRentals(req, res) {
           rentals.*,
           games."pricePerDay" AS "pricePerDay"
         FROM rentals 
-        JOIN games ON games.id=rentals."gameId"
-        WHERE rentals.id=$1
+        JOIN games ON games.id = rentals."gameId"
+        WHERE rentals.id = $1
       `,
       [id]
     );
@@ -132,8 +130,10 @@ export async function updateRentals(req, res) {
       return res.status(400).send("Lease already finalized");
     }
 
-    const returnDate = dayjs();
-    const diff = returnDate.diff(dayjs(rental.rentDate), "day");
+    const returnDate = new Date();
+    const diff = Math.floor(
+      (returnDate - new Date(rental.rentDate)) / (1000 * 60 * 60 * 24)
+    );
     let delayFee = 0;
 
     if (diff > rental.daysRented) {
@@ -143,14 +143,14 @@ export async function updateRentals(req, res) {
     await db.query(
       `
         UPDATE rentals
-        SET "returnDate"=$1,
-            "delayFee"=$2
-        WHERE id=$3
+        SET "returnDate" = TO_CHAR($1 :: DATE, 'yyyy-mm-dd'),
+            "delayFee" = $2
+        WHERE id = $3
       `,
-      [returnDate.format("YYYY-MM-DD HH:mm:ss"), delayFee, id]
+      [returnDate.toISOString(), delayFee, id]
     );
 
-    return res.sendStatus(201);
+    return res.sendStatus(200);
   } catch (err) {
     return res.status(500).send({ message: err });
   }
@@ -163,25 +163,27 @@ export async function deleteRentals(req, res) {
     const result = await db.query(
       `
         SELECT * FROM rentals WHERE id=$1
-        `,
+      `,
       [id]
     );
+
     if (result.rowCount < 1) {
-      return res.status(404).send('Rental not found.');
+      return res.status(404).send("Rental not found.");
     }
+
     if (result.rows[0].returnDate !== null) {
-      return res.status(400).send('The rental has already been returned.');
+      return res.status(400).send("The rental has already been returned.");
     }
 
     await db.query(
       `
         DELETE FROM rentals WHERE id=$1
-        `,
+      `,
       [id]
     );
-    res.sendStatus(200);
+
+    return res.sendStatus(200);
   } catch (err) {
-    res.status(500).send(err);
+    return res.status(500).send(err);
   }
 }
-
