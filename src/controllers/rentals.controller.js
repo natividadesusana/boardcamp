@@ -171,8 +171,8 @@ export async function deleteRentals(req, res) {
       return res.status(404).send("Rental not found.");
     }
 
-    if (result.rows[0].returnDate !== null) {
-      return res.status(400).send("The rental has already been returned.");
+    if (result.rows[0].returnDate === null) {
+      return res.status(400).send("The rental has not been returned yet.");
     }
 
     await db.query(
@@ -187,3 +187,4 @@ export async function deleteRentals(req, res) {
     return res.status(500).send(err);
   }
 }
+
