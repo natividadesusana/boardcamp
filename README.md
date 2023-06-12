@@ -1,13 +1,14 @@
-# Boardcamp Project
+# BoardCamp Project
 
 ## ℹ️ About
-Boardcamp is an online platform for renting board games. Users can browse a catalog of games, rent them for a specific period, and manage their rentals. The main features of the project include:
+BoardCamp is an online platform for renting board games. Users can browse a catalog of games, rent them for a specific period, and manage their rentals. The main features of the project include:
 
-View a catalog of board games available for rent.
-Rent a game by selecting the desired duration.
-Manage rentals by viewing active rentals and returning games.
-Add new games to the catalog (admin only).
-Boardcamp was developed as a personal project to showcase my web development skills and provide a convenient solution for board game enthusiasts.
+- View a catalog of board games available for rent.
+- Rent a game by selecting the desired duration.
+- Manage rentals by viewing active rentals and returning games.
+- Add new games to the catalog (admin only).
+  
+BoardCamp was developed as a personal project to showcase my web development skills and provide a convenient solution for board game enthusiasts.
 
 ## 🛠️ Technologies
 <div> 
